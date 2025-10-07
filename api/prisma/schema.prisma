@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int            @id @default(autoincrement())
+  username       String?        @unique
+  businessName   String?        @unique
+  email          String         @unique
+  phone          String         @unique
+  password       String
+  profileImage   String?
+  approved       Boolean        @default(false)
+  role           String         @default("user")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  services       Service[]
+  payments       Payment[]
+  availabilities Availability[]
+  foodDeliveries FoodDelivery[] // <--- Add this line
+}
+
+enum LocationType {
+  CUSTOM
+  PROVIDER
+  HYBRID
+}
+
+model Service {
+  id              Int              @id @default(autoincrement())
+  category        String
+  name            String
+  images          String
+  price           Float
+  location        String
+  locationType    LocationType     @default(PROVIDER)
+  description     String
+  duration        Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id])
+  payments        Payment[]        @relation("ServicePayments")
+  paymentServices PaymentService[] // <-- Add this line
+}
+
+model FoodDelivery {
+  id                    Int                   @id @default(autoincrement())
+  category              String
+  name                  String
+  price                 Float
+  ingredients           String?
+  foodDescription       String?
+  foodImage             String?
+  userId                Int
+  user                  User                  @relation(fields: [userId], references: [id])
+  createdAt             DateTime              @default(now())
+  payments              Payment[]             @relation("FoodDeliveryPayments")
+  paymentFoodDeliveries PaymentFoodDelivery[] // <-- Add this line
+}
+
+model PaymentService {
+  id           Int     @id @default(autoincrement())
+  paymentId    Int
+  serviceId    Int
+  quantity     Int     @default(1)
+  initialPrice Int? // <--- Add this line
+  payment      Payment @relation(fields: [paymentId], references: [id])
+  service      Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([paymentId, serviceId])
+}
+
+model PaymentFoodDelivery {
+  id             Int          @id @default(autoincrement())
+  paymentId      Int
+  foodDeliveryId Int
+  quantity       Int          @default(1)
+  initialPrice   Int? // <--- Add this line
+  payment        Payment      @relation(fields: [paymentId], references: [id])
+  foodDelivery   FoodDelivery @relation(fields: [foodDeliveryId], references: [id])
+
+  @@unique([paymentId, foodDeliveryId])
+}
+
+model Payment {
+  id                    Int                   @id @default(autoincrement())
+  bookingLocation       String?
+  firstName             String
+  lastName              String
+  email                 String
+  phoneNumber           String
+  datetime              DateTime
+  createdAt             DateTime              @default(now())
+  status                String                @default("pending")
+  transactionRef        String? // For AFRIPAY transaction_ref
+  paymentMethod         String? // For AFRIPAY payment_method
+  amount                Float? // Payment amount from AfriPay
+  currency              String? // Payment currency from AfriPay
+  message               String? // Payment message from AfriPay
+  gatewayResponse       String? // Full gateway response as JSON
+  userId                Int
+  user                  User                  @relation(fields: [userId], references: [id])
+  services              Service[]             @relation("ServicePayments")
+  foodDeliveries        FoodDelivery[]        @relation("FoodDeliveryPayments")
+  paymentServices       PaymentService[]
+  paymentFoodDeliveries PaymentFoodDelivery[]
+
+  // Booking validation fields
+  isAvailable       Boolean @default(true) // Was the provider available at booking time?
+  unavailableReason String? // Reason if not available (from provider's unavailability/emergency)
+  isTimeBooked      Boolean @default(false) // True if another customer already booked this time
+  conflictWithId    Int? // Reference to conflicting Payment (if any)
+}
+
+model Availability {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  dayFrom     String // e.g. "Monday"
+  dayTo       String // e.g. "Saturday"
+  hourFrom    String // e.g. "14:06"
+  hourTo      String // e.g. "18:00"
+  unavailable Boolean  @default(false) // true if provider is unavailable
+  reason      String? // Reason for unavailability or emergency
+  emergency   Boolean  @default(false) // true if this is an emergency lock
+  duration    Int? // Duration in minutes for emergency/unavailability
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  expiresAt DateTime
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+}

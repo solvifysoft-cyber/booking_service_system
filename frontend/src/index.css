@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add to your main CSS file */
+.btn-pulse {
+  animation: pulse 1.5s infinite;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(50,205,50, 0.7);
+  }
+  50% {
+    transform: scale(1.07);
+    box-shadow: 0 0 12px 4px rgba(50,205,50, 0.18);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(50,205,50, 0.7);
+  }
+}
+@media (max-width: 640px) {
+  .btn-pulse {
+    min-width: 90px !important;
+    font-size: 0.85rem !important;
+    padding: 0.5rem 0.8rem !important;
+  }
+}

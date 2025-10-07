@@ -1,0 +1,40 @@
+{
+  "short_name": "service.com",
+  "name": "Service Booking",
+  "icons": [
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "64x64"
+    },
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "256x256"
+    },
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "384x384"
+    },
+    {
+      "src": "LOGO-SERVICE-ICON.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
