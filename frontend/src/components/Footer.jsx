@@ -62,11 +62,11 @@ const Footer = () => {
           <h3 className="text-xl font-bold mb-2">Customer Tools</h3>
           <div className="h-1 w-10 bg-[#32CD32] mb-3" />
           <ul className="space-y-2">
-            <li><a href="/account" className="hover:text-[#32CD32]">My Account</a></li>
-            <li><a href="/booking-history" className="hover:text-[#32CD32]">Booking History</a></li>
-            <li><a href="/wishlist" className="hover:text-[#32CD32]">Wishlist</a></li>
-            <li><a href="/support" className="hover:text-[#32CD32]">Customer Support</a></li>
-            <li><a href="/faqs" className="hover:text-[#32CD32]">FAQs</a></li>
+            <li><a href="#" className="hover:text-[#32CD32]">My Account</a></li>
+            <li><a href="#" className="hover:text-[#32CD32]">Booking History</a></li>
+            <li><a href="#" className="hover:text-[#32CD32]">Wishlist</a></li>
+            <li><a href="#" className="hover:text-[#32CD32]">Customer Support</a></li>
+            <li><a href="#" className="hover:text-[#32CD32]">FAQs</a></li>
           </ul>
         </div>
 
@@ -81,7 +81,7 @@ const Footer = () => {
             </li>
             <li className="flex items-center gap-2"><FaMapMarkerAlt className="text-[#32CD32]" /> Huye, Rwanda</li>
             <li className="flex items-center gap-2"><FaPhoneAlt className="text-[#32CD32]" /> (+250) 783 775 019</li>
-            <li className="flex items-center gap-2"><FaEnvelope className="text-[#32CD32]" /> imanirumvaolivier20@gmail.com</li>
+            <li className="flex items-center gap-2"><FaEnvelope className="text-[#32CD32]" />solvifysoft@gmail.com</li>
           </ul>
         </div>
       </div>

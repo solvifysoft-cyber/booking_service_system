@@ -197,8 +197,8 @@ const AddService = ({ isLoggedIn, email }) => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-      {/* Navbar with user email only (no duplicate badge) */}
-      <Navbar isLoggedIn={isLoggedIn} phone={email} />
+  {/* Navbar with user email only (no duplicate badge) */}
+  <Navbar isLoggedIn={isLoggedIn} phone={email} userName={email?.split('@')[0]} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
 
       <main className="flex-1 flex items-center justify-center px-2 py-6">
         <div className="bg-[#1A1A1A] rounded-xl p-8 w-full max-w-lg mx-auto shadow-lg relative border border-[#232323]">

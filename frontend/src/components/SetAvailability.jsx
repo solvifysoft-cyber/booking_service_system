@@ -172,7 +172,7 @@ const SetAvailability = ({ isLoggedIn, email }) => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-      <Navbar isLoggedIn={true} phone={userEmail || email} />
+      <Navbar isLoggedIn={true} phone={userEmail || email} userName={(userEmail || email)?.split('@')[0]} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
       <div className="max-w-xl mx-auto mt-10 p-4 w-full">
         <div className="bg-[#1A1A1A] rounded-xl p-8 shadow-lg border border-[#232323]">
           <h2 className="text-2xl font-bold text-[#32CD32] mb-6 flex items-center gap-2">

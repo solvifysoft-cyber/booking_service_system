@@ -29,6 +29,7 @@ const Home = ({
   onLoginClick,
   onJoinClick,
   onLogout,
+  userServiceCategory,
 }) => {
   const [category, setCategory] = useState('All');
   const [services, setServices] = useState([]);
@@ -57,9 +58,12 @@ const Home = ({
           fetch('http://localhost:3000/api/v1/user', { credentials: 'include' }),
           fetch('http://localhost:3000/api/v1/food-delivery', { credentials: 'include' }),
         ]);
-        setServices(await servicesRes.json());
-        setUsers(await usersRes.json());
-        setFoodDeliveries(await foodRes.json());
+        const servicesData = await servicesRes.json();
+        const usersData = await usersRes.json();
+        const foodData = await foodRes.json();
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+        setUsers(Array.isArray(usersData) ? usersData : []);
+        setFoodDeliveries(Array.isArray(foodData) ? foodData : []);
       } catch {
         setServices([]);
         setUsers([]);
@@ -234,6 +238,7 @@ const Home = ({
         isLoggedIn={isLoggedIn}
         phone={email}
         onLogout={onLogout}
+        serviceCategory={userServiceCategory || localStorage.getItem('userServiceCategory') || ''}
       />
 
       {/* Main content */}
@@ -407,6 +412,7 @@ const App = () => {
   const [checked, setChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
+  const [userServiceCategory, setUserServiceCategory] = useState('');
   const navigate = useNavigate();
 
   // Initialize app state
@@ -425,7 +431,20 @@ const App = () => {
           setIsLoggedIn(true);
           setEmail(data.email || '');
           setIsAdmin(data.role === 'admin');
-          
+
+          // New: Fetch user info for service category
+            fetch('http://localhost:3000/api/v1/user/' + data.userId)
+              .then(r => r.json())
+              .then(user => {
+                setUserServiceCategory(user.serviceCategory || '');
+                // Redirect after login based on serviceCategory
+                if (user.serviceCategory === 'FOOD_DELIVERY') {
+                  navigate('/food-delivery-bookings');
+                } else if (user.serviceCategory === 'MASSAGE') {
+                  navigate('/bookings');
+                }
+              });
+
           // Update localStorage for consistency
           localStorage.setItem('userRole', data.role || 'user');
           localStorage.setItem('userEmail', data.email || '');
@@ -434,7 +453,7 @@ const App = () => {
           setIsLoggedIn(false);
           setEmail('');
           setIsAdmin(false);
-          
+          setUserServiceCategory('');
           // Clear localStorage
           localStorage.removeItem('userRole');
           localStorage.removeItem('userEmail');
@@ -445,6 +464,7 @@ const App = () => {
         setIsLoggedIn(false);
         setEmail('');
         setIsAdmin(false);
+        setUserServiceCategory('');
         
         // Clear localStorage on error
         localStorage.removeItem('userRole');
@@ -473,9 +493,11 @@ const App = () => {
     setIsLoggedIn(false);
     setEmail('');
     setIsAdmin(false);
+    setUserServiceCategory('');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userId');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userServiceCategory');
     window.location.href = '/'; // Force reload to reset all state and UI
   };
 
@@ -535,6 +557,21 @@ const App = () => {
           ${getInputIcon('business')}
           <input type="text" id="swal-join-businessName" class="swal2-input" placeholder="Business Name (optional)" style="padding-left:36px;" />
         </div>
+        <!-- SERVICE CATEGORY SELECTION: NOW APPEARS HERE -->
+        <div style="margin:18px 0 18px 0; padding:0; text-align:center;">
+          <label style="color:#32CD32; font-size:1.12em; font-weight:bold; display:block; margin-bottom:10px; letter-spacing:0.5px;">Select Service Category</label>
+          <div class="swal2-service-category-flex" style="display:flex;flex-direction:row;justify-content:center;align-items:center;gap:32px;">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:1.1em;">
+              <input type="radio" name="swal-join-serviceCategory" value="MASSAGE" style="width:20px;height:20px;accent-color:#32CD32;outline:2px solid #32CD32;box-shadow:0 0 0 3px #1A1A1A;" />
+              <span style="color:white;">Massage</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:1.1em;">
+              <input type="radio" name="swal-join-serviceCategory" value="FOOD_DELIVERY" style="width:20px;height:20px;accent-color:#32CD32;outline:2px solid #32CD32;box-shadow:0 0 0 3px #1A1A1A;" />
+              <span style="color:white;">Food Delivery</span>
+            </label>
+          </div>
+        </div>
+        <!-- END SERVICE CATEGORY SELECTION -->
         <div style="position:relative;">
           ${getInputIcon('email')}
           <input type="email" id="swal-join-email" class="swal2-input" placeholder="Email" autocomplete="username" style="padding-left:36px;" />
@@ -574,7 +611,7 @@ const App = () => {
         extra.innerHTML = `
           <button type="button" id="swal-forgot-password" class="text-[#32CD32] underline mb-2" style="background:none;border:none;cursor:pointer;">Forgot password?</button>
           <span>
-            New to service.com? 
+            New to Book Me? 
             <button type="button" id="swal-join-now" class="text-[#32CD32] underline" style="background:none;border:none;cursor:pointer;">Join Now</button>
           </span>
         `;
@@ -608,6 +645,9 @@ const App = () => {
         const phone = document.getElementById('swal-join-phone').value;
         const password = document.getElementById('swal-join-password').value;
         const confirmPassword = document.getElementById('swal-join-confirmPassword').value;
+        // Service Category - required for all except future admin
+        const serviceCategoryElem = document.querySelector('input[name="swal-join-serviceCategory"]:checked');
+        const serviceCategory = serviceCategoryElem ? serviceCategoryElem.value : '';
         if (!username || !email || !phone || !password || !confirmPassword) {
           Swal.showValidationMessage('Please fill all required fields');
           return false;
@@ -616,7 +656,11 @@ const App = () => {
           Swal.showValidationMessage('Passwords do not match');
           return false;
         }
-        return { username, businessName, email, phone, password, confirmPassword };
+        if (!serviceCategory) {
+          Swal.showValidationMessage('Please select a service category');
+          return false;
+        }
+        return { username, businessName, email, phone, password, confirmPassword, serviceCategory };
       }
     },
     customClass: {
@@ -660,8 +704,25 @@ if (data.user && (data.user.role === 'admin' || data.user.isAdmin)) {
             localStorage.setItem('userRole', data.user.role || 'user');
             localStorage.setItem('userEmail', data.user.email || '');
             localStorage.setItem('userId', data.user.id.toString());
+              // Fetch and persist user's service category so Navbar can use it immediately
+              fetch('http://localhost:3000/api/v1/user/' + data.user.id, { credentials: 'include' })
+                .then(r => r.json())
+                .then(user => {
+                  const serviceCategory = user.serviceCategory || '';
+                  setUserServiceCategory(serviceCategory);
+                  localStorage.setItem('userServiceCategory', serviceCategory);
+                  // Redirect after login based on serviceCategory
+                  if (serviceCategory === 'FOOD_DELIVERY') {
+                    navigate('/food-delivery-bookings');
+                  } else if (serviceCategory === 'MASSAGE') {
+                    navigate('/bookings');
+                  }
+                }).catch(() => {
+                  setUserServiceCategory('');
+                  localStorage.removeItem('userServiceCategory');
+                });
             
-            Swal.fire('Success', 'Login successful!', 'success');
+            Swal.fire('Success', 'Login successful! Redirecting to your dashboard.', 'success');
           } catch (err) {
             Swal.fire('Error', err.message, 'error');
           }
@@ -739,29 +800,44 @@ if (data.user && (data.user.role === 'admin' || data.user.isAdmin)) {
               onLoginClick={handleLoginClick}
               onJoinClick={handleJoinClick}
               onLogout={handleLogout}
+              userServiceCategory={userServiceCategory}
             />
           }
         />
-        <Route path="/add-service" element={isAdmin ? <Navigate to="/admin" /> : <AddService isLoggedIn={isLoggedIn} email={email} />} />
-        <Route path="/my-services" element={isAdmin ? <Navigate to="/admin" /> : <MyServices isLoggedIn={isLoggedIn} email={email} />} />
+        <Route path="/add-service" element={
+          isAdmin ? <Navigate to="/admin" /> :
+          userServiceCategory === 'FOOD_DELIVERY' ? <Navigate to="/food-delivery" /> : <AddService isLoggedIn={isLoggedIn} email={email} />
+        } />
+        <Route path="/my-services" element={
+          isAdmin ? <Navigate to="/admin" /> :
+          userServiceCategory === 'FOOD_DELIVERY' ? <Navigate to="/food-delivery-view" /> : <MyServices isLoggedIn={isLoggedIn} email={email} />
+        } />
         <Route path="/user-profile" element={isAdmin ? <Navigate to="/admin" /> : <UserProfile isLoggedIn={isLoggedIn} email={email} />} />
         <Route path="/profile-view" element={isAdmin ? <Navigate to="/admin" /> : <ProfileView isLoggedIn={isLoggedIn} email={email} />} />
         <Route path="/book-service/:id" element={isAdmin ? <Navigate to="/admin" /> : <BookServicePage isLoggedIn={isLoggedIn} email={email} />} />
         <Route path="/payment" element={isAdmin ? <Navigate to="/admin" /> : <PaymentPage isLoggedIn={isLoggedIn} email={email} />} />
-        <Route path="/bookings" element={isAdmin ? <Navigate to="/admin" /> : <BookingsPage isLoggedIn={isLoggedIn} email={email} />} />
+        <Route path="/bookings" element={
+          isAdmin ? <Navigate to="/admin" /> :
+          userServiceCategory === 'FOOD_DELIVERY' ? <Navigate to="/food-delivery-bookings" /> : <BookingsPage isLoggedIn={isLoggedIn} email={email} />
+        } />
         <Route path="/booking-details" element={isAdmin ? <Navigate to="/admin" /> : <BookingDetails isLoggedIn={isLoggedIn} email={email} />} />
-        <Route path="/finances" element={isAdmin ? <Navigate to="/admin" /> : <Finances isLoggedIn={isLoggedIn} email={email} />} />
+        <Route path="/finances" element={isAdmin ? <Navigate to="/admin" /> : <Finances isLoggedIn={isLoggedIn} email={email} serviceCategory={userServiceCategory} />} />
         <Route path="/set-availability" element={isAdmin ? <Navigate to="/admin" /> : <SetAvailability isLoggedIn={isLoggedIn} email={email} />} />
-        <Route path="/food-delivery" element={<FoodDeliveryAdd email={email} />} />
-        <Route path="/food-delivery-view" element={<FoodDeliveryView email={email} />} />
+        <Route path="/food-delivery" element={
+          userServiceCategory === 'MASSAGE' ? <Navigate to="/add-service" /> : <FoodDeliveryAdd email={email} />
+        } />
+        <Route path="/food-delivery-view" element={
+          userServiceCategory === 'MASSAGE' ? <Navigate to="/my-services" /> : <FoodDeliveryView email={email} />
+        } />
+        <Route path="/food-delivery-bookings" element={
+          userServiceCategory === 'MASSAGE' ? <Navigate to="/bookings" /> : <FoodDeliveryBookingsPage isLoggedIn={isLoggedIn} email={email} />
+        } />
         <Route path="/admin" element={<AdminDashboard onLogout={handleLogout} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/feedback" element={<Feedback />} />
-        <Route path="/food-delivery-bookings" element={<FoodDeliveryBookingsPage isLoggedIn={isLoggedIn} email={email} />} />
            </Routes>
     </>
   );
 };
 
 export default App;
-

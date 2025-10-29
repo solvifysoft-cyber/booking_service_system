@@ -32,8 +32,8 @@ export default function ProfileView() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Navbar with user email */}
-      <Navbar isLoggedIn={true} phone={user.email} />
+  {/* Navbar with user email */}
+  <Navbar isLoggedIn={true} phone={user.email} userName={user.username || user.businessName} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
       <div className="flex flex-col items-center justify-center pt-10">
         <div className="bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md">
           <div className="flex flex-col items-center mb-6">

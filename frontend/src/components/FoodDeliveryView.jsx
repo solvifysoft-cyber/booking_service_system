@@ -201,9 +201,11 @@ const FoodDeliveryView = ({ email }) => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-      <Navbar isLoggedIn={true} phone={userEmail || email} />
+      <Navbar isLoggedIn={true} phone={userEmail || email} userName={(userEmail || email)?.split('@')[0]} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
       <div className="max-w-2xl mx-auto mt-6 p-2 sm:p-4 w-full">
-        <h2 className="text-2xl font-bold text-white mb-4 sm:mb-6 text-center">Your Food Delivery Menu</h2>
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h2 className="text-2xl font-bold text-white text-center">Your Food Delivery Menu</h2>
+        </div>
         {loading ? (
           <div className="text-center text-gray-400">Loading...</div>
         ) : Object.keys(grouped).length === 0 ? (

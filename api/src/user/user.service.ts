@@ -13,7 +13,7 @@ export class UserService {
   constructor(private readonly db: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { email, password, confirmPassword, role, approved, phone, username, businessName } = createUserDto;
+    const { email, password, confirmPassword, role, approved, phone, username, businessName, serviceCategory } = createUserDto;
 
     if (password !== confirmPassword) {
       throw new BadRequestException('Passwords do not match');
@@ -59,6 +59,11 @@ export class UserService {
       }
     }
 
+    // Enforce serviceCategory requirement except for admin
+    if ((role !== 'admin' && role !== 'ADMIN') && !serviceCategory) {
+      throw new BadRequestException('Service category is required for non-admin users');
+    }
+
     const user = await this.db.user.create({
       data: {
         username: createUserDto.username,
@@ -70,6 +75,7 @@ export class UserService {
         // Set role and approved, fallback to defaults if not provided
         role: role ?? 'user',
         approved: approved ?? false,
+        serviceCategory: (role !== 'admin' && role !== 'ADMIN') ? serviceCategory : null,
       },
     });
 
@@ -114,6 +120,7 @@ export class UserService {
           typeof updateUserDto.approved === 'boolean'
             ? updateUserDto.approved
             : user.approved,
+        serviceCategory: updateUserDto.serviceCategory ?? user.serviceCategory,
       },
     });
 

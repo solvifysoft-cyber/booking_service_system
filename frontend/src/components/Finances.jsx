@@ -31,7 +31,7 @@ const TooltipPortal = ({ children, position, visible }) => {
   );
 };
 
-const Finances = ({ isLoggedIn, email }) => {
+const Finances = ({ isLoggedIn, email, serviceCategory }) => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('');
@@ -39,7 +39,9 @@ const Finances = ({ isLoggedIn, email }) => {
   const [to, setTo] = useState('');
   const [activeQuick, setActiveQuick] = useState('');
   const [customActive, setCustomActive] = useState(false);
-  const [paymentType, setPaymentType] = useState('all');
+  // Remove: paymentType state and filter buttons
+  // Apply category filtering automatically by serviceCategory
+  // Massages: filter to paymentServices, FoodDelivery: to paymentFoodDeliveries
 
   // Use email from props, do not fetch/set again
   const userEmail = email;
@@ -124,15 +126,12 @@ const Finances = ({ isLoggedIn, email }) => {
       return true;
     })
     .filter((p) => {
-      if (paymentType === 'service') {
-        // Only service bookings (no food deliveries)
+      if (serviceCategory === 'FOOD_DELIVERY') {
+        return Array.isArray(p.paymentFoodDeliveries) && p.paymentFoodDeliveries.length > 0;
+      } else if (serviceCategory === 'MASSAGE') {
         return Array.isArray(p.paymentServices) && p.paymentServices.length > 0;
       }
-      if (paymentType === 'food') {
-        // Only food delivery bookings
-        return Array.isArray(p.paymentFoodDeliveries) && p.paymentFoodDeliveries.length > 0;
-      }
-      return true; // 'all'
+      return false;
     });
 
   // Helper to calculate total initial price from join tables
@@ -232,7 +231,7 @@ const Finances = ({ isLoggedIn, email }) => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white">
-      <Navbar isLoggedIn={isLoggedIn} phone={email} />
+      <Navbar isLoggedIn={isLoggedIn} phone={email} userName={email?.split('@')[0]} serviceCategory={serviceCategory || localStorage.getItem('userServiceCategory') || ''} />
 
       <div className="max-w-5xl mx-auto mt-10 p-4">
         <h2 className="text-2xl font-bold text-[#32CD32] mb-6">My Payments</h2>
@@ -294,26 +293,7 @@ const Finances = ({ isLoggedIn, email }) => {
         </div>
 
         {/* Payment type filter buttons */}
-        <div className="flex gap-2 mb-4">
-          <button
-            className={`px-4 py-2 rounded font-semibold ${paymentType === 'all' ? 'bg-[#32CD32] text-black' : 'bg-[#232323] text-white hover:bg-[#32CD32] hover:text-black'}`}
-            onClick={() => setPaymentType('all')}
-          >
-            All
-          </button>
-          <button
-            className={`px-4 py-2 rounded font-semibold ${paymentType === 'service' ? 'bg-[#32CD32] text-black' : 'bg-[#232323] text-white hover:bg-[#32CD32] hover:text-black'}`}
-            onClick={() => setPaymentType('service')}
-          >
-            Service Bookings
-          </button>
-          <button
-            className={`px-4 py-2 rounded font-semibold ${paymentType === 'food' ? 'bg-[#32CD32] text-black' : 'bg-[#232323] text-white hover:bg-[#32CD32] hover:text-black'}`}
-            onClick={() => setPaymentType('food')}
-          >
-            Food Delivery
-          </button>
-        </div>
+        {/* Remove: paymentType filter buttons */}
 
         <div className="mb-4 text-xl font-bold">
           Total: <span className="text-[#32CD32]">{totalAmount.toLocaleString()} Rwf</span>

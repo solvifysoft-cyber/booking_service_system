@@ -23,6 +23,7 @@ model User {
   payments       Payment[]
   availabilities Availability[]
   foodDeliveries FoodDelivery[] // <--- Add this line
+  serviceCategory ServiceCategory?
 }
 
 enum LocationType {
@@ -149,4 +150,9 @@ model Feedback {
   phone     String?
   message   String
   createdAt DateTime @default(now())
+}
+
+enum ServiceCategory {
+  MASSAGE
+  FOOD_DELIVERY
 }

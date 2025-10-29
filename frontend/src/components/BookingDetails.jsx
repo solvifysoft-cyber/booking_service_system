@@ -86,7 +86,7 @@ const BookingDetails = ({ isLoggedIn, email }) => {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white">
-      <Navbar isLoggedIn={isLoggedIn} phone={userEmail} />
+      <Navbar isLoggedIn={isLoggedIn} phone={userEmail} userName={userEmail?.split('@')[0]} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
       <div className="max-w-3xl mx-auto mt-8 p-4">
         <div className="flex items-center mb-6">
           <button

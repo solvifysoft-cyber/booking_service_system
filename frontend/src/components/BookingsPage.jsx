@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
-import { FiUser, FiCalendar, FiEye, FiPackage } from 'react-icons/fi';
+import { FiUser, FiCalendar, FiEye, FiPackage, FiDollarSign, FiTrendingUp, FiClock, FiCheckCircle, FiSettings } from 'react-icons/fi';
 import { MdDone, MdPending } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer';
@@ -34,6 +34,8 @@ const BookingsPage = ({ isLoggedIn, email }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [hasServices, setHasServices] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+  const [services, setServices] = useState([]);
   const navigate = useNavigate();
 
   // Always fetch user info from session to get correct userId/email
@@ -44,9 +46,11 @@ const BookingsPage = ({ isLoggedIn, email }) => {
         const me = await meRes.json();
         setUserEmail(me.email || email || '');
         setUserId(me.userId || '');
+        setUserInfo(me);
       } catch {
         setUserEmail(email || '');
         setUserId('');
+        setUserInfo(null);
       }
     };
     fetchUser();
@@ -98,6 +102,7 @@ const BookingsPage = ({ isLoggedIn, email }) => {
         if (servicesRes.ok) {
           servicesData = await servicesRes.json();
         }
+        setServices(Array.isArray(servicesData) ? servicesData : []);
         setHasServices(Array.isArray(servicesData) && servicesData.length > 0);
       } catch (err) {
         setBookings([]);
@@ -138,25 +143,60 @@ const BookingsPage = ({ isLoggedIn, email }) => {
     return 0;
   };
 
+  // Dashboard calculations
+  const calculateDashboardMetrics = () => {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    
+    const todayBookings = bookings.filter(b => {
+      const bookingDate = new Date(b.datetime).toISOString().slice(0, 10);
+      return bookingDate === todayStr;
+    });
+
+    const upcomingBookings = bookings.filter(b => {
+      const bookingDate = new Date(b.datetime);
+      return bookingDate > today && b.status !== 'Done';
+    });
+
+    const totalAmountToday = todayBookings.reduce((sum, b) => sum + getInitialPriceTotal(b), 0);
+    const amountEarnedToday = todayBookings
+      .filter(b => b.status === 'Done')
+      .reduce((sum, b) => sum + getInitialPriceTotal(b), 0);
+    const amountDue = bookings
+      .filter(b => b.status !== 'Done')
+      .reduce((sum, b) => sum + getInitialPriceTotal(b), 0);
+
+    return {
+      totalServices: services.length,
+      totalBookings: bookings.length,
+      todayBookings: todayBookings.length,
+      upcomingBookings: upcomingBookings.length,
+      totalAmountToday,
+      amountEarnedToday,
+      amountDue
+    };
+  };
+
+  const metrics = calculateDashboardMetrics();
+
   // Handler for view button
   const handleView = (booking) => {
     navigate('/booking-details', { state: { booking } });
   };
 
-  if (bookings.length === 0) {
-    return <div className="text-center py-8 text-gray-400">No service bookings found.</div>;
-  }
-
   return (
     <div className="min-h-screen bg-[#121212] text-white">
       {/* Navbar with user email only (no duplicate badge) */}
-      <Navbar isLoggedIn={isLoggedIn} phone={userEmail} />
+      <Navbar isLoggedIn={isLoggedIn} phone={userEmail} userName={userInfo?.username || userInfo?.businessName} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
 
-      <div className="max-w-3xl mx-auto mt-8 p-4">
-        <div className="flex items-center mb-6">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-[#32CD32] mb-1">My Bookings</h2>
-            <p className="text-gray-400 text-sm">All your service bookings in one place.</p>
+      {/* Dashboard Header */}
+      <div className="max-w-7xl mx-auto mt-8 p-4">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-[#32CD32] mb-2">Service Dashboard</h1>
+            {userInfo?.businessName && (
+              <p className="text-xl text-gray-300">Welcome, {userInfo.businessName}</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <FiCalendar className="text-[#32CD32] text-xl" />
@@ -164,7 +204,7 @@ const BookingsPage = ({ isLoggedIn, email }) => {
               type="date"
               value={selectedDate}
               onChange={e => setSelectedDate(e.target.value)}
-              className="bg-[#232323] border border-[#32CD32] text-white rounded px-3 py-1 focus:outline-none"
+              className="bg-[#232323] border border-[#32CD32] text-white rounded px-3 py-2 focus:outline-none"
               style={{ minWidth: 140 }}
             />
             {selectedDate && (
@@ -177,74 +217,150 @@ const BookingsPage = ({ isLoggedIn, email }) => {
             )}
           </div>
         </div>
-        {loading ? (
-          <div className="text-center py-8 text-gray-400">Loading...</div>
-        ) : fetchError ? (
-          <div className="text-center py-8 text-red-400">{fetchError}</div>
-        ) : grouped.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            {hasServices
-              ? "You have not received any bookings yet for your services."
-              : "No bookings found."}
-          </div>
-        ) : (
-          grouped.map(({ date, bookings }) => (
-            <div key={date} className="mb-8">
-              <div className="font-semibold text-lg text-[#32CD32] mb-2">{date}</div>
-              <div className="space-y-3">
-                {bookings.map((b, idx) => (
-                  <div
-                    key={b.id || idx}
-                    className="flex items-center bg-[#181818] rounded-lg shadow border border-gray-700 px-4 py-3"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FiUser className="text-[#32CD32]" />
-                        <span className="font-semibold">{b.firstName} {b.lastName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-300 text-xs mb-1">
-                        <FiPackage className="text-[#32CD32]" />
-                        <span>{getServiceNames(b)}</span>
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        {new Date(b.datetime).toLocaleString()}
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        Provider: {b.providerName || b.provider || '-'}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={statusColor[b.status] || statusColor['Due']}>
-                        {b.status === 'Done' ? (
-                          <>
-                            <MdDone className="inline" /> Done
-                          </>
-                        ) : (
-                          <>
-                            <MdPending className="inline" /> Due
-                          </>
-                        )}
-                      </span>
-                      <span className="bg-[#32CD32] text-black font-bold px-2 py-1 rounded text-xs mt-1">
-                        Paid
-                      </span>
-                      <span className="text-[#32CD32] font-bold">
-                        {getInitialPriceTotal(b).toLocaleString()} Rwf
-                      </span>
-                      <button
-                        className="flex items-center gap-1 text-[#32CD32] hover:underline text-sm mt-1"
-                        onClick={() => handleView(b)}
-                        title="View details"
-                      >
-                        <FiEye /> View
-                      </button>
-                    </div>
-                  </div>
-                ))}
+
+        {/* Dashboard Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+          {/* Total Services */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Total Services</p>
+                <p className="text-2xl font-bold text-white">{metrics.totalServices}</p>
               </div>
+              <FiSettings className="text-[#32CD32] text-2xl" />
             </div>
-          ))
-        )}
+          </div>
+
+          {/* Total Bookings */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Total Bookings</p>
+                <p className="text-2xl font-bold text-white">{metrics.totalBookings}</p>
+              </div>
+              <FiPackage className="text-[#32CD32] text-2xl" />
+            </div>
+          </div>
+
+          {/* Today's Bookings */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Today's Bookings</p>
+                <p className="text-2xl font-bold text-white">{metrics.todayBookings}</p>
+              </div>
+              <FiCalendar className="text-[#32CD32] text-2xl" />
+            </div>
+          </div>
+
+          {/* Upcoming Bookings */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Upcoming</p>
+                <p className="text-2xl font-bold text-white">{metrics.upcomingBookings}</p>
+              </div>
+              <FiClock className="text-[#32CD32] text-2xl" />
+            </div>
+          </div>
+
+          {/* Total Amount Today */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Total Today</p>
+                <p className="text-2xl font-bold text-white">{metrics.totalAmountToday.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">RWF</p>
+              </div>
+              <FiDollarSign className="text-[#32CD32] text-2xl" />
+            </div>
+          </div>
+
+          {/* Amount Earned Today */}
+          <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm font-medium">Earned Today</p>
+                <p className="text-2xl font-bold text-white">{metrics.amountEarnedToday.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">RWF</p>
+              </div>
+              <FiCheckCircle className="text-[#32CD32] text-2xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings List Section */}
+        <div className="bg-[#181818] rounded-lg p-6 border border-gray-700">
+          <h2 className="text-2xl font-bold text-[#32CD32] mb-6">Recent Bookings</h2>
+          {loading ? (
+            <div className="text-center py-8 text-gray-400">Loading...</div>
+          ) : fetchError ? (
+            <div className="text-center py-8 text-red-400">{fetchError}</div>
+          ) : grouped.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              {hasServices
+                ? "You have not received any bookings yet for your services."
+                : "No bookings found."}
+            </div>
+          ) : (
+            grouped.map(({ date, bookings }) => (
+              <div key={date} className="mb-8">
+                <div className="font-semibold text-lg text-[#32CD32] mb-4">{date}</div>
+                <div className="space-y-4">
+                  {bookings.map((b, idx) => (
+                    <div
+                      key={b.id || idx}
+                      className="flex items-center bg-[#232323] rounded-lg shadow border border-gray-600 px-4 py-4"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FiUser className="text-[#32CD32]" />
+                          <span className="font-semibold text-lg">{b.firstName} {b.lastName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-300 text-sm mb-2">
+                          <FiPackage className="text-[#32CD32]" />
+                          <span>{getServiceNames(b)}</span>
+                        </div>
+                        <div className="text-gray-400 text-sm mb-1">
+                          {new Date(b.datetime).toLocaleString()}
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Provider: {b.providerName || b.provider || '-'}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-3">
+                        <span className={statusColor[b.status] || statusColor['Due']}>
+                          {b.status === 'Done' ? (
+                            <>
+                              <MdDone className="inline" /> Done
+                            </>
+                          ) : (
+                            <>
+                              <MdPending className="inline" /> Due
+                            </>
+                          )}
+                        </span>
+                        <span className="bg-[#32CD32] text-black font-bold px-3 py-1 rounded text-sm">
+                          Paid
+                        </span>
+                        <span className="text-[#32CD32] font-bold text-lg">
+                          {getInitialPriceTotal(b).toLocaleString()} Rwf
+                        </span>
+                        <button
+                          className="flex items-center gap-1 text-[#32CD32] hover:underline text-sm mt-1"
+                          onClick={() => handleView(b)}
+                          title="View details"
+                        >
+                          <FiEye /> View
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
       <Footer />
     </div>

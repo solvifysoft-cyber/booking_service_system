@@ -6,4 +6,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsBoolean()
   approved?: boolean;
+
+  @IsOptional()
+  serviceCategory?: 'MASSAGE' | 'FOOD_DELIVERY';
 }

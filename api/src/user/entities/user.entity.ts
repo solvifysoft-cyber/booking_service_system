@@ -1,1 +1,3 @@
-export class User {}
+export class User {
+  serviceCategory?: 'MASSAGE' | 'FOOD_DELIVERY';
+}

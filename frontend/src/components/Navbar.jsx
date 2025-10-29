@@ -15,31 +15,18 @@ import Swal from 'sweetalert2';
 import defaultLogo from '../assets/LOGO-SERVICE.png';
 import menuLogo from '../assets/Book me, bg_white.png';
 
-const Navbar = ({ onLoginClick, onJoinClick, isLoggedIn, phone, onLogout, userProfile }) => {
+const Navbar = ({ onLoginClick, onJoinClick, isLoggedIn, phone, userName, onLogout, userProfile, serviceCategory }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const navigate = useNavigate();
 
   const handleAddService = () => {
     setMenuOpen(false);
-    Swal.fire({
-      title: 'Add Service',
-      text: 'What would you like to add?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Add Massage',
-      cancelButtonText: 'Add Food Delivery',
-      confirmButtonColor: '#32CD32',
-      cancelButtonColor: '#1e90ff',
-      reverseButtons: true,
-      background: '#f9f9f9',
-      color: '#222',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        navigate('/add-service', { state: { category: 'Massage' } });
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        navigate('/food-delivery');
-      }
-    });
+    if (serviceCategory === 'FOOD_DELIVERY') {
+      navigate('/food-delivery');
+    } else {
+      navigate('/add-service');
+    }
   };
 
   const handleHome = () => {
@@ -49,49 +36,20 @@ const Navbar = ({ onLoginClick, onJoinClick, isLoggedIn, phone, onLogout, userPr
 
   const handleMyServices = () => {
     setMenuOpen(false);
-      setMenuOpen(false);
-  Swal.fire({
-    title: 'view Service',
-    text: 'What would you like to View?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'View Massage',
-    cancelButtonText: 'View Food Delivery',
-    confirmButtonColor: '#32CD32',
-    cancelButtonColor: '#1e90ff',
-    reverseButtons: true,
-    background: '#f9f9f9',
-    color: '#222',
-  }).then((result) => {
-    if (result.isConfirmed) {
-      navigate('/my-services', { state: { category: 'Massage' } });
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
+    if (serviceCategory === 'FOOD_DELIVERY') {
       navigate('/food-delivery-view');
+    } else {
+      navigate('/my-services');
     }
-  });
   };
 
 const handleBookings = () => {
   setMenuOpen(false);
-  Swal.fire({
-    title: 'View Booking',
-    text: 'What would you like to view?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'View Massage',
-    cancelButtonText: 'View Food Delivery',
-    confirmButtonColor: '#32CD32',
-    cancelButtonColor: '#1e90ff',
-    reverseButtons: true,
-    background: '#f9f9f9',
-    color: '#222',
-  }).then((result) => {
-    if (result.isConfirmed) {
-      navigate('/bookings', { state: { category: 'Massage' } });
-    } else if (result.dismiss === Swal.DismissReason.cancel) {
-      navigate('/food-delivery-bookings');
-    }
-  });
+  if (serviceCategory === 'FOOD_DELIVERY') {
+    navigate('/food-delivery-bookings');
+  } else {
+    navigate('/bookings');
+  }
 };
 
 
@@ -107,6 +65,7 @@ const handleBookings = () => {
 
   const handleProfile = () => {
     setMenuOpen(false);
+    // The following Swal.fire block was removed as per the edit hint.
     Swal.fire({
       title: 'Profile Options',
       text: 'What would you like to do?',
@@ -127,6 +86,7 @@ const handleBookings = () => {
   };
 
   const handleLogout = async () => {
+    // The following Swal.fire block was removed as per the edit hint.
     Swal.fire({
       title: 'Are you sure?',
       text: 'You will be logged out.',
@@ -145,6 +105,7 @@ const handleBookings = () => {
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
+        localStorage.removeItem('userServiceCategory');
         if (onLogout) onLogout();
         window.location.href = '/';
 
@@ -172,7 +133,7 @@ const handleBookings = () => {
           )}
           <img
             src={defaultLogo}
-            alt="Service.com Logo"
+            alt="Book Me Logo"
             className="w-32 h-auto cursor-pointer"
             onClick={() => {
               setMenuOpen(false);
@@ -181,13 +142,20 @@ const handleBookings = () => {
           />
         </div>
 
-        {/* User phone display */}
-        {isLoggedIn && phone && (
+        {/* User display */}
+        {isLoggedIn && (phone || userName) && (
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-2 text-white font-semibold bg-gradient-to-r from-[#1e90ff] to-[#32CD32] px-4 py-1 rounded-full shadow">
+            <button 
+              onClick={() => setShowEmail(!showEmail)}
+              className="flex items-center gap-2 text-white font-semibold bg-gradient-to-r from-[#1e90ff] to-[#32CD32] px-4 py-1 rounded-full shadow hover:from-[#1e90ff] hover:to-[#32CD32] hover:shadow-lg transition-all duration-200 cursor-pointer"
+            >
               <FiUser className="text-lg text-white" />
-              {phone}
-            </span>
+              {/* Show full email on desktop, toggle on mobile */}
+              <span className="hidden sm:inline">{phone}</span>
+              <span className="sm:hidden">
+                {showEmail ? phone : (userName ? userName.charAt(0).toUpperCase() : (phone ? phone.charAt(0).toUpperCase() : 'U'))}
+              </span>
+            </button>
           </div>
         )}
 
@@ -235,13 +203,13 @@ const handleBookings = () => {
                 <FiHome className="text-xl" /> Home
               </button>
               <button onClick={handleAddService} className="flex items-center gap-3 text-base hover:text-[#32CD32]">
-                <FiPlus className="text-xl" /> Add Service
+                <FiPlus className="text-xl" /> {serviceCategory === 'FOOD_DELIVERY' ? 'Add Food Menu' : 'Add Service'}
               </button>
               <button onClick={handleMyServices} className="flex items-center gap-3 text-base hover:text-[#32CD32]">
-                <FiList className="text-xl" /> My Services
+                <FiList className="text-xl" /> {serviceCategory === 'FOOD_DELIVERY' ? 'My Menu Items' : 'My Services'}
               </button>
               <button onClick={handleBookings} className="flex items-center gap-3 text-base hover:text-[#32CD32]">
-                <FiCalendar className="text-xl" /> Bookings
+                <FiCalendar className="text-xl" /> {serviceCategory === 'FOOD_DELIVERY' ? 'Food Orders' : 'Bookings'}
               </button>
               <button onClick={handleAvailability} className="flex items-center gap-3 text-base hover:text-[#32CD32]">
                 <FiClock className="text-xl" /> Set Availability

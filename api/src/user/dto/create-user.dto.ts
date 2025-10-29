@@ -17,6 +17,10 @@ export class CreateUserDto {
   @IsString()
   businessName?: string;
 
+  @IsOptional()
+  @IsString()
+  serviceCategory?: 'MASSAGE' | 'FOOD_DELIVERY'; // Enforced in service, required except for admins
+
   @IsNotEmpty()
   @IsPhoneNumber('RW') // Use 'RW' for Rwanda or 'ZZ' for any region
   phone!: string;

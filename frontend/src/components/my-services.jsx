@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
 import Swal from 'sweetalert2';
-import { FiMoreVertical } from 'react-icons/fi';
 import Footer from './Footer';
+import { FaPlus } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 // Accept isLoggedIn and email as props from App.jsx
 const MyServices = ({ isLoggedIn, email }) => {
+  const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(false);
@@ -172,10 +174,20 @@ const MyServices = ({ isLoggedIn, email }) => {
   return (
     <div className="min-h-screen bg-[#121212] text-white relative">
       {/* Navbar with user email only (no duplicate badge) */}
-      <Navbar isLoggedIn={isLoggedIn} phone={email} />
+  <Navbar isLoggedIn={isLoggedIn} phone={email} userName={email?.split('@')[0]} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
 
       <div className="max-w-3xl mx-auto py-10 px-4">
-        <h2 className="text-2xl font-bold text-[#32CD32] mb-6">My Services</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[#32CD32]">My Services</h2>
+          <button
+            className="bg-[#32CD32] hover:bg-[#28a828] text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl"
+        aria-label="Add Massage service"
+        title="Add Massage Service"
+        onClick={() => navigate('/add-service')}
+      >
+        <FaPlus />
+      </button>
+        </div>
         {loading ? (
           <div className="text-center text-gray-400">Loading...</div>
         ) : services.length === 0 ? (
@@ -198,28 +210,20 @@ const MyServices = ({ isLoggedIn, email }) => {
                     <div className="font-bold text-lg text-white">{service.name}</div>
                     <div className="text-gray-400 text-sm">{service.category}</div>
                   </div>
-                  <div className="ml-auto">
-                    <span className="text-[#32CD32] font-semibold">{service.price} Rwf</span>
-                  </div>
-                  <div className="relative">
+                  <div className="ml-auto flex gap-2">
                     <button
-                      className="ml-2 p-2 rounded-full hover:bg-[#232323] transition"
-                      onClick={() =>
-                        Swal.fire({
-                          title: 'Service Menu',
-                          showCancelButton: true,
-                          showDenyButton: true,
-                          confirmButtonText: 'Edit',
-                          denyButtonText: 'Delete',
-                          cancelButtonText: 'Close',
-                          icon: 'info'
-                        }).then(result => {
-                          if (result.isConfirmed) openEditModal(service);
-                          else if (result.isDenied) handleDelete(service.id);
-                        })
-                      }
+                      className="p-2 rounded-full hover:bg-[#232323] transition"
+                      onClick={() => openEditModal(service)}
+                      title="Edit"
                     >
-                      <FiMoreVertical className="text-xl text-[#32CD32]" />
+                      <span role="img" aria-label="Edit"><svg width="18" height="18" style={{color:'#32CD32'}}><rect width="16" height="16" x="1" y="1" fill="none" stroke="#32CD32" strokeWidth="2" rx="4"/><path d="M5 13.5V15h1.5l6.1-6.1-1.5-1.5L5 13.5zm7.9-6.1c.198-.198.198-.518 0-.716l-1.6-1.6a.508.508 0 00-.716 0l-1.1 1.1 2.3 2.3z" fill="#32CD32"/></svg></span>
+                    </button>
+                    <button
+                      className="p-2 rounded-full hover:bg-red-200 transition"
+                      onClick={() => handleDelete(service.id)}
+                      title="Delete"
+                    >
+                      <span role="img" aria-label="Delete"><svg width="18" height="18" style={{color:'#dc2626'}}><rect width="16" height="16" x="1" y="1" fill="none" stroke="#dc2626" strokeWidth="2" rx="4"/><path d="M6 7h6m-3-3v10" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"/></svg></span>
                     </button>
                   </div>
                 </div>

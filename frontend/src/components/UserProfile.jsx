@@ -117,7 +117,7 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white">
-      <Navbar isLoggedIn={true} phone={user.email} />
+  <Navbar isLoggedIn={true} phone={user.email} userName={user.username || user.businessName} serviceCategory={localStorage.getItem('userServiceCategory') || ''} />
       <div className="max-w-2xl mx-auto p-6 space-y-8">
         {/* Profile Image on Top */}
         <div className="flex flex-col items-center mb-8">
